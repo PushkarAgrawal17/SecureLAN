@@ -2,7 +2,7 @@
 
 **A LAN-based secure file transfer application built with Python, TCP sockets and modern cryptography.**
 
-SecureLAN is a client-server file transfer application that allows two computers on the same local network to exchange files through two modes: Normal and Secure.
+SecureLAN is a client-server file transfer application that allows two computers on the same local network to exchange files through two modes: **Normal** and **Secure**.
 
 The project demonstrates how encryption, key exchange, file integrity verification and server identity verification can improve the security of file transfers. It also compares both modes through Wireshark traffic analysis and performance measurements.
 
@@ -16,6 +16,28 @@ The project demonstrates how encryption, key exchange, file integrity verificati
 - **Graphical Interface:** Separate sender and receiver dashboards built with CustomTkinter.
 - **Live Transfer Monitoring:** View transfer progress, speed, elapsed time and activity logs.
 - **Wireshark Analysis:** Inspect TCP traffic and compare plaintext and encrypted payloads.
+
+## Screenshots
+
+### Application Interface
+
+The sender and receiver interfaces provide controls for connecting, selecting transfer modes and monitoring file transfers.
+
+![SecureLAN Sender Interface](screenshots/client-interface.png)
+
+![SecureLAN Receiver Interface](screenshots/server-interface.png)
+
+![SecureLAN Successful File Transfer](screenshots/transfer-success.png)
+
+### Network Traffic Analysis
+
+Wireshark was used to inspect TCP conversations, visualize network traffic and observe the encrypted payload.
+
+![Wireshark TCP Conversations](screenshots/wireshark-tcp-conversations.png)
+
+![Wireshark I/O Graph](screenshots/wireshark-io-graph.png)
+
+![Encrypted Payload in Wireshark](screenshots/wireshark-encrypted-payload.png)
 
 ## Technology Stack
 
@@ -37,15 +59,37 @@ SecureLAN follows a client-server architecture. The receiver listens for incomin
 
 ```mermaid
 flowchart LR
-    A["Sender Laptop"] --> B["Client GUI"]
-    B --> C["TCP Connection"]
-    C --> D["Receiver Server"]
-    D --> E["Received Files"]
+    subgraph Sender
+        A[Sender GUI]
+        B[Server Fingerprint Check]
+        C[Generate AES Session Key]
+        D[Encrypt File with AES-256-GCM]
+        E[Wrap AES Key with RSA-OAEP]
+        A --> B
+        B --> C
+        C --> D
+        C --> E
+    end
 
-    B --> F["RSA-OAEP + AES-256-GCM"]
-    F --> C
-    D --> G["SHA-256 Verification"]
-    G --> E
+    subgraph Network
+        F[TCP Connection]
+    end
+
+    subgraph Receiver
+        G[Receiver Server]
+        H[Unwrap AES Key]
+        I[Decrypt File]
+        J[Verify SHA-256 Digest]
+        K[Save Received File]
+        G --> H
+        H --> I
+        I --> J
+        J --> K
+    end
+
+    D --> F
+    E --> F
+    F --> G
 ```
 
 ### Secure Transfer Workflow
@@ -90,7 +134,7 @@ The application was tested using 1 MB, 10 MB and 50 MB files over a local networ
 
 These are observed results from the project testing environment, not guaranteed performance figures.
 
-The Secure mode was slower for the 1 MB and 10 MB tests but slightly faster in the 50 MB test. This demonstrates why repeated controlled experiments are important before drawing conclusions about cryptographic overhead.
+Secure mode was slower in the 1 MB and 10 MB tests but slightly faster in the 50 MB test. This demonstrates why repeated controlled experiments are important before drawing conclusions about cryptographic overhead.
 
 ## Wireshark Analysis
 
@@ -99,22 +143,24 @@ Wireshark was used to inspect network traffic and understand how the two transfe
 Useful display filters:
 
 **1. Filter SecureLAN traffic**
+
 ```text
 tcp.port == 5000
 ```
 
 **2. Identify TCP retransmissions**
+
 ```text
 tcp.port == 5000 && tcp.analysis.retransmission
 ```
 
 **3. Inspect TCP conversations**
 
-Use Statistics → Conversations → TCP to inspect communicating endpoints, packet counts and transferred bytes.
+Use **Statistics → Conversations → TCP** to inspect communicating endpoints, packet counts and transferred bytes.
 
 **4. Follow TCP Stream**
 
-Compare Normal and Secure transfers to observe the difference between plaintext and encrypted file payloads.
+Use **Follow → TCP Stream** to inspect the data exchanged during a transfer. Normal mode exposes the file payload as plaintext, whereas Secure mode carries encrypted file content.
 
 Even in Secure mode, some information remains observable, including IP addresses, TCP ports, packet sizes, timing, traffic volume and protocol metadata such as filenames and file sizes.
 
@@ -130,7 +176,7 @@ Even in Secure mode, some information remains observable, including IP addresses
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/SecureLAN.git
+git clone https://github.com/PushkarAgrawal17/SecureLAN.git
 cd SecureLAN
 ```
 
@@ -152,7 +198,7 @@ py server.py
 2. Note the displayed LAN IPv4 address and port.
 3. Copy the displayed server public-key fingerprint.
 
-The application automatically generates an RSA-3072 key pair on the first server initialization and reuses the existing keys on subsequent runs.
+The application automatically generates an RSA-3072 key pair on the first server initialization and reuses the existing keys on subsequent runs. The keys are stored locally in `server_keys/` and are not included in the repository.
 
 ### 4. Start the Sender
 
@@ -177,19 +223,23 @@ If Windows Firewall prompts for network access, allow Python on Private networks
 ```text
 SecureLAN/
 │
-├── client.py           # Sender GUI and transfer logic
-├── server.py           # Receiver GUI and server logic
-├── common.py           # Shared networking and utility functions
-├── crypto_utils.py     # RSA and AES cryptographic functions
+├── client.py               # Sender GUI and transfer logic
+├── server.py               # Receiver GUI and server logic
+├── common.py               # Shared networking and utility functions
+├── crypto_utils.py         # RSA and AES cryptographic functions
 │
-├── captures/           # Wireshark capture storage
-├── received_files/     # Received files
-├── logs/               # Runtime logs
+├── screenshots/            # Application and Wireshark screenshots
+├── captures/               # Wireshark capture storage
+├── received_files/          # Received files
+├── logs/                    # Runtime logs
+├── server_keys/             # Locally generated RSA keys (not committed)
 │
-├── requirements.txt    # Python dependencies
+├── requirements.txt         # Python dependencies
 ├── .gitignore
 └── README.md
 ```
+
+The `captures/`, `received_files/` and `logs/` directories contain runtime data and are excluded from version control, apart from their `.gitkeep` placeholders. The `server_keys/` directory is generated locally when the server starts.
 
 ## Security Considerations
 
