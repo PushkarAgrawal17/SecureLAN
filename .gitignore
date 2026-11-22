@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables and local configuration
+.env
+.env.*
+!.env.example
+
+# Runtime RSA keys (private and public keys are generated locally)
+server_keys/
+
+# Received files and runtime output
+received_files/*
+!received_files/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# Packet captures can contain sensitive network information
+*.pcap
+*.pcapng
+captures/*
+!captures/.gitkeep
+
+# Editor / OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
